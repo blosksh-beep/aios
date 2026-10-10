@@ -58,7 +58,12 @@ RUN dnf install -y git wget vim rsync \
 # 无线网卡/蓝牙: 基础镜像有 NetworkManager-wifi+wpa_supplicant, 自定义镜像缺
 # (2026-08-26 实测: NM 报 "'wifi' plugin not available", WiFi 卡不可用;
 #  bluez 在但 bluetoothd 未启用 → 一并 enable)
-RUN dnf install -y NetworkManager-wifi wpa_supplicant \
+# 2026-10-11: 上游基础镜像换了新 NetworkManager (1:1.58.1-3.hum1, 来自 public-hummingbird),
+#  它 obsoletes 掉 NetworkManager-vpnc < 1:1.4.0-8, 而 kde-desktop 组带进来的
+#  plasma-nm-vpnc 仍 requires NetworkManager-vpnc → dnf 拒绝事务 ("Failed to resolve
+#  the transaction"), 自 2026-10-04 起每次 CI 构建都在这一步失败。--allowerasing 允许
+#  连带移除过时的 vpnc 插件 (本机 VPN 走 clash TUN, 不用 vpnc)。
+RUN dnf install -y --allowerasing NetworkManager-wifi wpa_supplicant \
     && systemctl enable bluetooth \
     && dnf clean all
 
